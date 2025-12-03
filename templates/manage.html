@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Rash Web – O'quvchilar va testlar</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page">
+        <header class="header">
+            <h1>Rash Web – boshqaruv</h1>
+            <p class="subtitle">O'quvchilar ro'yxati, testlar va titul PDF lar</p>
+            <p style="margin-top:6px;font-size:0.85rem;">
+                <a href="{{ url_for('index') }}">← Rasch modeli sahifasiga qaytish</a>
+            </p>
+        </header>
+
+        <main class="content">
+            <div class="card">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% if messages %}
+                        <div class="messages">
+                            {% for category, message in messages %}
+                                <div class="alert {{ category }}">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endwith %}
+
+                <section style="margin-bottom:18px;">
+                    <h2>🧑‍🎓 O'quvchilar</h2>
+                    <form class="upload-form" action="{{ url_for('add_student') }}" method="post">
+                        <input type="text" name="name" placeholder="Ism Familiya" required>
+                        <input type="text" name="sid" placeholder="ID" required>
+                        <button type="submit" class="primary-btn">O'quvchi qo'shish</button>
+                    </form>
+
+                    {% if students %}
+                        <div class="table-wrapper">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Ism Familiya</th>
+                                        <th>ID</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for s in students %}
+                                        <tr>
+                                            <td>{{ s["Ism Familiya"] }}</td>
+                                            <td>{{ s["ID"] }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <p class="note">Hozircha hech qanday o'quvchi yo'q.</p>
+                    {% endif %}
+                </section>
+
+                <section style="margin-bottom:16px;">
+                    <h2>📝 Testlar</h2>
+                    <form class="upload-form" action="{{ url_for('create_test') }}" method="post">
+                        <input type="text" name="test_name" placeholder="Yangi test nomi" required>
+                        <button type="submit" class="primary-btn">Yangi test yaratish</button>
+                    </form>
+
+                    {% if tests %}
+                        <p class="note">Mavjud testlar:</p>
+                        <ul>
+                            {% for t in tests %}
+                                <li>{{ t }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p class="note">Hozircha hech qanday test yaratilmagan.</p>
+                    {% endif %}
+                </section>
+
+                <section>
+                    <h2>🖨️ Titul PDF larini yaratish</h2>
+                    <form class="upload-form" action="{{ url_for('tituls_generate') }}" method="post">
+                        <select name="test_for_titul" required>
+                            <option value="">Testni tanlang…</option>
+                            {% for t in tests %}
+                                <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="primary-btn">Titullarni yaratish</button>
+                    </form>
+
+                    <p class="note">
+                        Titul PDF lar <code>output/&lt;test_nomi&gt;/tituls</code> ichiga saqlanadi.
+                    </p>
+                </section>
+            </div>
+        </main>
+
+        <footer class="footer">
+            <span>Rash Test Manager – lokal web interfeys (localhost)</span>
+        </footer>
+    </div>
+</body>
+</html>
+
+

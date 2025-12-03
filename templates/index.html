@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <title>Rash Web – Rasch modeli (55 savol)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page">
+        <header class="header">
+            <h1>Rash Web</h1>
+            <p class="subtitle">Rasch modeli (55 savol) – brauzer orqali ishga tushirish</p>
+        </header>
+
+        <main class="content-grid">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="messages">
+                        {% for category, message in messages %}
+                            <div class="alert {{ category }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            <section class="card rasch-card">
+                <h2>📊 Rasch modeli (55 savol)</h2>
+                <p class="help-text">
+                    Excel faylingiz <strong>Ism Familiya</strong>, <strong>ID</strong> va
+                    <strong>Q1…Q55</strong> ustunlari bilan bo‘lishi kerak
+                    (desktop dasturdagi <code>results.xlsx</code> kabi).
+                </p>
+
+                <form id="rasch-form" class="upload-form" action="{{ url_for('run_rasch_endpoint') }}" method="post" enctype="multipart/form-data">
+                    <label class="file-input-label">
+                        <span id="file-label-text">Excel faylni tanlang…</span>
+                        <input type="file" name="results_file" id="results_file" accept=".xlsx" required>
+                    </label>
+
+                    <button type="submit" class="primary-btn">
+                        Rasch modelini ishga tushirish
+                    </button>
+                </form>
+
+                <p class="note">
+                    Hisoblash tugagach, <strong>rasch_55_weight_chart.xlsx</strong> fayli avtomatik ravishda yuklab olinadi.
+                </p>
+
+                <div id="progress" class="progress hidden">
+                    <div class="spinner"></div>
+                    <span>Hisoblanmoqda, iltimos kuting… (bir necha soniya davom etishi mumkin)</span>
+                </div>
+            </section>
+
+            <section class="card students-card">
+                <h2>🧑‍🎓 O'quvchilar</h2>
+                <div class="split-grid">
+                    <div class="mini-card">
+                        <h3>Qo'lda qo'shish</h3>
+                        <form class="upload-form row-form" action="{{ url_for('add_student') }}" method="post">
+                            <input type="text" name="name" placeholder="Ism Familiya" required>
+                            <input type="text" name="sid" placeholder="ID" required>
+                            <button type="submit" class="primary-btn">Qo'shish</button>
+                        </form>
+                    </div>
+
+                    <div class="mini-card">
+                        <h3>Exceldan yuklash</h3>
+                        <p class="help-text small">
+                            <code>Ism Familiya</code> va <code>ID</code> ustunlari bo'lgan .xlsx fayl.
+                            Mavjud ID lar qayta yozilmaydi.
+                        </p>
+                        <form class="upload-form" action="{{ url_for('upload_students') }}" method="post" enctype="multipart/form-data">
+                            <label class="file-input-label">
+                                <span>O'quvchilar .xlsx fayli</span>
+                                <input type="file" name="students_file" accept=".xlsx" required>
+                            </label>
+                            <button type="submit" class="primary-btn">Yuklash</button>
+                        </form>
+                    </div>
+                </div>
+
+                {% if students %}
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ism Familiya</th>
+                                    <th>ID</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for s in students %}
+                                    <tr>
+                                        <td>{{ s["Ism Familiya"] }}</td>
+                                        <td>{{ s["ID"] }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="note">Hozircha hech qanday o'quvchi yo'q.</p>
+                {% endif %}
+            </section>
+
+            <section class="card tests-card">
+                <div class="section-header">
+                    <h2>📝 Testlar va titul PDF lar</h2>
+                    <form class="row-form" action="{{ url_for('create_test') }}" method="post">
+                        <input type="text" name="test_name" placeholder="Yangi test nomi" required>
+                        <button type="submit" class="primary-btn">Yaratish</button>
+                    </form>
+                </div>
+
+                {% if tests %}
+                    <p class="note">Mavjud testlar:</p>
+                    <div class="table-wrapper small-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Test nomi</th>
+                                    <th>Titullar</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for t in tests %}
+                                    <tr>
+                                        <td>{{ t.name }}</td>
+                                        <td>
+                                            {% if t.has_tituls %}
+                                                <a class="secondary-btn" href="{{ url_for('tituls_download') }}?test={{ t.name }}">ZIP yuklash</a>
+                                            {% else %}
+                                                <span class="badge badge-muted">Hali yo'q</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <p class="note">Hozircha hech qanday test yaratilmagan.</p>
+                {% endif %}
+
+                <div class="split-grid">
+                    <div class="mini-card">
+                        <h3>🖨️ Titul PDF larini yaratish</h3>
+                        <form class="upload-form" action="{{ url_for('tituls_generate') }}" method="post">
+                            <select name="test_for_titul" required>
+                                <option value="">Testni tanlang…</option>
+                                {% for t in tests %}
+                                    <option value="{{ t.name }}">{{ t.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="primary-btn">Titullarni yaratish</button>
+                        </form>
+                        <p class="note">
+                            Fayllar <code>output/&lt;test_nomi&gt;/tituls</code> papkasida saqlanadi.
+                        </p>
+                    </div>
+
+                    <div class="mini-card">
+                        <h3>🔑 Test kaliti (Q1..Q35)</h3>
+                        <form class="upload-form key-form" action="{{ url_for('upload_test_key') }}" method="post">
+                            <select name="key_test_name" required>
+                                <option value="">Testni tanlang…</option>
+                                {% for t in tests %}
+                                    <option value="{{ t.name }}">{{ t.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="table-wrapper small-table">
+                                <table class="key-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Savol</th>
+                                            <th>Javob</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for i in range(1, 36) %}
+                                            <tr>
+                                                <td>Q{{ i }}</td>
+                                                <td>
+                                                    <input type="text" name="q{{ i }}" maxlength="1" placeholder="A/B/C/D" />
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <button type="submit" class="primary-btn">Kalitni saqlash</button>
+                        </form>
+                        <p class="note">
+                            Har bir satrga 1 ta harfli javob kiriting. Bo‘sh qoldirilgan savollar hisobga olinmaydi.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card checking-card">
+                <h2>🖼 Javob varaqalarini tekshirish</h2>
+                <div class="mini-grid">
+                    <div class="mini-card">
+                        <h3>Old tomon (ko'p rasm)</h3>
+                        <p class="help-text small">
+                            Bir nechta JPG/PNG faylini yuklang – barchasi bitta Excelda.
+                        </p>
+                        <form class="upload-form" action="{{ url_for('grade_front_images_batch_route') }}" method="post" enctype="multipart/form-data">
+                            <label class="file-input-label">
+                                <span>Old rasmlar (bir nechta)</span>
+                                <input type="file" name="front_images" accept=".jpg,.jpeg,.png" multiple required>
+                            </label>
+                            <button type="submit" class="primary-btn">Tekshirish</button>
+                        </form>
+                    </div>
+
+                    <div class="mini-card">
+                        <h3>Orqa tomon (ko'p rasm)</h3>
+                        <p class="help-text small">
+                            Bir nechta JPG/PNG orqa rasmlarni yuklang – barchasi bitta Excelda.
+                        </p>
+                        <form class="upload-form" action="{{ url_for('grade_back_images_batch_route') }}" method="post" enctype="multipart/form-data">
+                            <label class="file-input-label">
+                                <span>Orqa rasmlar (bir nechta)</span>
+                                <input type="file" name="back_images" accept=".jpg,.jpeg,.png" multiple required>
+                            </label>
+                            <button type="submit" class="primary-btn">Tekshirish</button>
+                        </form>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <span>Rash Test Manager – lokal web interfeys (localhost)</span>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
+
+
